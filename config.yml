@@ -1,0 +1,10 @@
+sharingLink: https://files.bamdad.dev/bmdd/
+minio:
+  endpoint: files.bamdad.dev
+  accessKeyId: XXXX
+  secretAccessKey: YYYY
+  useSsl: true
+  bucketName: bmdd
+  location: us-east-1
+sharingDirectoryPrefix: pb
+port: 7080
