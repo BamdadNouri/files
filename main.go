@@ -45,8 +45,9 @@ func run() {
 
 	minioClient := handleMinio(ctx, c)
 	handler := NewHandler(minioClient, c)
+	appGroup := engine.Group(c.Base)
 
-	statics := engine.Group("/")
+	statics := appGroup.Group("/")
 	engine.LoadHTMLGlob("./public/*.html")
 	statics.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
@@ -55,7 +56,7 @@ func run() {
 		c.HTML(http.StatusOK, "share.html", nil)
 	})
 
-	api := engine.Group("/api")
+	api := appGroup.Group("/api")
 	api.POST("upload", handler.Upload)
 	api.GET("link/:key", handler.GetLinks)
 
@@ -105,9 +106,10 @@ func (h *Handler) GetLinks(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"key":    key,
-		"stream": sharingLink,
-		"iosVlc": "vlc://" + sharingLink,
+		"key":        key,
+		"stream":     sharingLink,
+		"iosVlc":     "vlc://" + sharingLink,
+		"desktopVlc": "rtsp://" + sharingLink,
 	})
 	return
 }
@@ -177,6 +179,7 @@ type Config struct {
 	Minio                  MinIOConfig
 	SharingDirectoryPrefix string
 	Port                   string
+	Base                   string
 }
 
 func NewConfig() (*Config, error) {

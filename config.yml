@@ -8,3 +8,4 @@ minio:
   location: us-east-1
 sharingDirectoryPrefix: pb
 port: 7080
+base: ''

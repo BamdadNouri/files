@@ -1,0 +1,67 @@
+  
+  <a id="playOnline" style="display: none;">Play Online!</a>
+  <a id="openVlc" style="display: none;">Open in VLC!</a>
+  <a id="openVlcDesktop" style="display: none;">Open in VLC Desktop!</a>
+  <div></div>
+
+  <script>
+    var apiGetLinks = "https://bamdad.dev/files/api/link/"
+    // var apiGetLinks = "http://127.0.0.1:7080/api/link/"
+    var q = window.location.search.substring(1);
+    var qs = parse_query_string(q)
+    console.log(qs)
+    var playOnline = document.getElementById("playOnline")
+    var openVLC = document.getElementById("openVlc")
+    var openVLCDesktop = document.getElementById("openVlcDesktop")
+    var oOutput = document.querySelector("div")
+    if (qs.key == undefined) {
+        console.log("NO KEY!")
+        // render input with submit
+    } else {
+        console.log("WITH KEY!")
+        // show links by key
+        var oReq = new XMLHttpRequest();
+        oReq.open("GET", `${apiGetLinks}${qs.key}`, true);
+        oReq.onload = function(oEvent) {
+                console.log(oReq)
+            if (oReq.status == 200) {
+                // oOutput.innerHTML = `DONE!\n`;
+
+                playOnline.setAttribute("href", JSON.parse(oReq.response)["stream"])
+                playOnline.style.display = "block"
+
+                openVLC.setAttribute("href", JSON.parse(oReq.response)["iosVlc"])
+                openVLC.style.display = "block"
+
+                openVLCDesktop.setAttribute("href", JSON.parse(oReq.response)["desktopVlc"])
+                openVLCDesktop.style.display = "block"
+            } else {
+                oOutput.innerHTML = "Error " + oReq.status + " occurred when trying to upload your file.<br \/>";
+            }
+        };
+        oReq.send();
+    }
+
+function parse_query_string(query) {
+  var vars = query.split("&");
+  var query_string = {};
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split("=");
+    var key = decodeURIComponent(pair[0]);
+    var value = decodeURIComponent(pair[1]);
+    // If first entry with this name
+    if (typeof query_string[key] === "undefined") {
+      query_string[key] = decodeURIComponent(value);
+      // If second entry with this name
+    } else if (typeof query_string[key] === "string") {
+      var arr = [query_string[key], decodeURIComponent(value)];
+      query_string[key] = arr;
+      // If third or later entry with this name
+    } else {
+      query_string[key].push(decodeURIComponent(value));
+    }
+  }
+  return query_string;
+}
+
+  </script>
