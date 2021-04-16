@@ -43,15 +43,21 @@ func run() {
 	c, _ := NewConfig()
 	ctx := context.Background()
 
-	minioC := handleMinio(ctx, c)
-	handler := NewHandler(minioC, c)
+	minioClient := handleMinio(ctx, c)
+	handler := NewHandler(minioClient, c)
 
-	a := engine.Group("/")
-	a.GET("ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "PONG")
-		return
+	statics := engine.Group("/")
+	engine.LoadHTMLGlob("./public/*.html")
+	statics.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
 	})
-	a.POST("upload", handler.Upload)
+	statics.GET("/share", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "share.html", nil)
+	})
+
+	api := engine.Group("/api")
+	api.POST("upload", handler.Upload)
+	api.GET("link/:key", handler.GetLinks)
 
 	endless.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", c.Port), engine)
 }
@@ -67,7 +73,8 @@ func NewHandler(minioClient *minio.Client, config *Config) *Handler {
 
 func (h *Handler) Upload(c *gin.Context) {
 	file, err := c.FormFile("file")
-	fmt.Println(err)
+	k, _ := c.GetPostForm("key")
+	fmt.Println(k)
 	ctx := context.Background()
 	// TODO add format
 	objectName, err := handleUploads(ctx, h.minioClient, h.config.Minio.BucketName, h.config.SharingDirectoryPrefix+generateID(), file.Header.Get("content-type"), file)
@@ -81,6 +88,27 @@ func (h *Handler) Upload(c *gin.Context) {
 		res = gin.H{"link": h.config.SharingLink + objectName}
 	}
 	c.JSON(http.StatusOK, res)
+	return
+}
+
+func (h *Handler) GetLinks(c *gin.Context) {
+	key := c.Param("key")
+	ios := c.Query("ios")
+	stream := c.Query("stream")
+	sharingLink := h.config.SharingLink + h.config.SharingDirectoryPrefix + key
+	if ios != "" {
+		c.Redirect(http.StatusMovedPermanently, "vlc://"+sharingLink)
+		return
+	}
+	if stream != "" {
+		c.Redirect(http.StatusMovedPermanently, sharingLink)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"key":    key,
+		"stream": sharingLink,
+		"iosVlc": "vlc://" + sharingLink,
+	})
 	return
 }
 
