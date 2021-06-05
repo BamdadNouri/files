@@ -41,6 +41,22 @@ func run() {
 	}
 	engine.Use(cors.New(config))
 	c, _ := NewConfig()
+	if c.Port == "" {
+		c.SharingLink = "127.0.0.1:9000"
+		// c.SharingLink = "https://files.bamdad.dev/bmdd"
+		c.Minio = MinIOConfig{
+			Endpoint: "minio:9000",
+			// Endpoint:        "files.bamdad.dev",
+			AccessKeyID:     "devuser",
+			SecretAccessKey: "devpassword",
+			UseSSL:          false,
+			BucketName:      "bmdd",
+			Location:        "us-east-1",
+		}
+		c.SharingDirectoryPrefix = "pb/"
+		c.Port = "7080"
+		c.Base = ""
+	}
 	ctx := context.Background()
 
 	minioClient := handleMinio(ctx, c)
@@ -184,6 +200,9 @@ type Config struct {
 
 func NewConfig() (*Config, error) {
 	var c *Config
+	if viper.GetString("config") == "" {
+		return &Config{}, fmt.Errorf("config file is not provided")
+	}
 	viper.SetConfigFile(viper.GetString("config"))
 	err := viper.ReadInConfig()
 	if err != nil {
